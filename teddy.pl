@@ -81,7 +81,7 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                 parse_string  = parse_string.strip()
                 title = self.parse_url(parse_string)
                 self.redis_write(source, parse_string, title)
-                self.redis_write_last(source, msg)
+                self.redis_write_last(source, parse_string)
                 connection.privmsg(channel, title)
             except IOError:
                 connection.privmsg(channel, "jason didnt design me with proper logic")
