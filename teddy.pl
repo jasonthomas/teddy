@@ -35,6 +35,11 @@ class TeddyBot (ircbot.SingleServerIRCBot):
             redis_server.hset(url, "source", source)
             redis_server.hset(url, "time", time.gmtime())
 
+    def parse_url(self, msg):
+        browser = mechanize.Browser()
+        browser.open(msg)
+        return browser.title()
+        
     def redis_write_last(self, key, value):
         redis_server.set(key,value)
 
@@ -49,7 +54,7 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         if msg.lower().startswith("!%s" % self._nickname):
             connection.privmsg(channel, 'hello ' + source)
         if msg.lower().startswith("!%s" % "penis"):
-            connection.privmsg(channel, source + ' what are you say??')
+            connection.privmsg(channel, source + ' what are you saying ??')
         if msg.lower().startswith("!%s" % "last"):
             parse_last = re.split(' ', msg.strip())
             if len(parse_last) == 2 :
@@ -68,11 +73,10 @@ class TeddyBot (ircbot.SingleServerIRCBot):
             connection.privmsg(channel, ">|D:")
         if msg.lower().startswith("http"):
             try:
-                browser = mechanize.Browser()
-                browser.open(msg)
-                self.redis_write(source,msg,browser.title())
-                self.redis_write_last(source,msg)
-                connection.privmsg(channel, browser.title())
+                title = self.parse_url(msg)
+                self.redis_write(source, title)
+                self.redis_write_last(source, msg)
+                connection.privmsg(channel, title)
             except IOError:
                 connection.privmsg(channel, "jason didnt design me with proper logic")
             except:
