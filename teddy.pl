@@ -36,10 +36,10 @@ class TeddyBot (ircbot.SingleServerIRCBot):
             connection.privmsg(channel, ":D/<")
             connection.privmsg(channel, ":D|<")
         if msg.lower().startswith("http:"):
-            if re.search("youtube", msg.lower()):
-                connection.privmsg(channel, "i can't parse youtube URLS yet :(")
-            else:
+            try:
                 title = lxml.html.parse(msg.lower()).getroot()
                 connection.privmsg(channel, title.find(".//title").text)
+            except IOError:
+                connection.privmsg(channel, "jason didnt design me with proper logic")
 bot = TeddyBot ([( network, port )], nick, name)
 bot.start() 
