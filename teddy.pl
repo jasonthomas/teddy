@@ -60,6 +60,11 @@ class TeddyBot (ircbot.SingleServerIRCBot):
             connection.privmsg(channel, ":D|<")
             connection.privmsg(channel, ":D/<")
             connection.privmsg(channel, ":D|<")
+        if msg.lower().startswith("!%s" % "angrydance"):
+            connection.privmsg(channel, ">\D:")
+            connection.privmsg(channel, ">|D:")
+            connection.privmsg(channel, ">/D:")
+            connection.privmsg(channel, ">|D:")
         if msg.lower().startswith("http"):
             try:
                 browser = mechanize.Browser()
