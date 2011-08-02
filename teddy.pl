@@ -29,7 +29,9 @@ class TeddyBot (ircbot.SingleServerIRCBot):
 
     def redis_write(self, source, url, title):
         short = self.gen_random_string()
-        if ! redis_server.hexists(url, short)
+        if redis_server.hexists(url, short):
+            return 0
+        else:
             redis_server.hset(url, "short", short)
             redis_server.hset(url, "title", title)
             redis_server.hset(url, "source", source)
@@ -61,20 +63,24 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                connection.privmsg(channel, self.redis_read_last(parse_last[1]))
             else :
                 connection.privmsg(channel, "!last username")
+
         if msg.lower().startswith("!%s" % "dance"):
             connection.privmsg(channel, ":D\<")
             connection.privmsg(channel, ":D|<")
             connection.privmsg(channel, ":D/<")
             connection.privmsg(channel, ":D|<")
+
         if msg.lower().startswith("!%s" % "angrydance"):
             connection.privmsg(channel, ">\D:")
             connection.privmsg(channel, ">|D:")
             connection.privmsg(channel, ">/D:")
             connection.privmsg(channel, ">|D:")
-        if msg.lower().startswith("http"):
+        if re.search("http",msg.lower()):
             try:
-                title = self.parse_url(msg)
-                self.redis_write(source, title)
+                parse_string = msg[msg.find("http://"):]
+                parse_string  = parse_string.strip()
+                title = self.parse_url(parse_string)
+                self.redis_write(source, parse_string, title)
                 self.redis_write_last(source, msg)
                 connection.privmsg(channel, title)
             except IOError:
