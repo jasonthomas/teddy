@@ -69,8 +69,8 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                 connection.privmsg(channel, browser.title())
             except IOError:
                 connection.privmsg(channel, "jason didnt design me with proper logic")
-           # except:
-            #    connection.privmsg(channel, source + " what did you send me?")
+            except:
+                connection.privmsg(channel, source + " what did you send me?")
          
 bot = TeddyBot ([( network, port )], nick, name)
 bot.start() 
