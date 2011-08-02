@@ -29,10 +29,11 @@ class TeddyBot (ircbot.SingleServerIRCBot):
 
     def redis_write(self, source, url, title):
         short = self.gen_random_string()
-        redis_server.hset(url, "short", short)
-        redis_server.hset(url, "title", title)
-        redis_server.hset(url, "source", source)
-        redis_server.hset(url, "time", time.gmtime())
+        if ! redis_server.hexists(url, short)
+            redis_server.hset(url, "short", short)
+            redis_server.hset(url, "title", title)
+            redis_server.hset(url, "source", source)
+            redis_server.hset(url, "time", time.gmtime())
 
     def redis_write_last(self, key, value):
         redis_server.set(key,value)
@@ -48,7 +49,7 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         if msg.lower().startswith("!%s" % self._nickname):
             connection.privmsg(channel, 'hello ' + source)
         if msg.lower().startswith("!%s" % "penis"):
-            connection.privmsg(channel, source + ' loves the pee pee')
+            connection.privmsg(channel, source + ' what are you say??')
         if msg.lower().startswith("!%s" % "last"):
             parse_last = re.split(' ', msg.strip())
             if len(parse_last) == 2 :
