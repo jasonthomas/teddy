@@ -5,8 +5,7 @@
 import ircbot
 import sys
 import re
-import lxml.html
-import urllib2
+import mechanize
 
 network = '127.0.0.1'
 port = 6667
@@ -37,8 +36,9 @@ class TeddyBot (ircbot.SingleServerIRCBot):
             connection.privmsg(channel, ":D|<")
         if msg.lower().startswith("http:"):
             try:
-                title = lxml.html.parse(msg.lower()).getroot()
-                connection.privmsg(channel, title.find(".//title").text)
+                browser = mechanize.Browser()
+                browser.open(msg)
+                connection.privmsg(channel, browser.title())
             except IOError:
                 connection.privmsg(channel, "jason didnt design me with proper logic")
 bot = TeddyBot ([( network, port )], nick, name)
