@@ -10,14 +10,18 @@ import redis
 import time
 import random
 import string
+import ConfigParser
 
-network = '127.0.0.1'
-port = 6667
-channel = '#chat'
-nick = 'teddy'
-name = 'teddy'
+config = ConfigParser.RawConfigParser()
+config.read("teddy.cfg")
 
-redis_server = redis.Redis("192.168.0.70")
+network = config.get('irc', 'network')
+port = config.getint('irc', 'port')
+channel = config.get('irc', 'channel')
+nick = config.get('irc', 'nick')
+name = config.get('irc', 'name')
+
+redis_server = redis.Redis(config.get('redis', 'host'))
 
 class TeddyBot (ircbot.SingleServerIRCBot):
     def on_welcome (self, connection, event):
