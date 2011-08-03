@@ -28,14 +28,18 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         return ''.join(random.sample(char_set,10))
 
     def redis_write(self, source, url, title):
-        short = self.gen_random_string()
-        if redis_server.hexists(url, short):
-            return 0
-        else:
+        if not self.redis_exists(url, title):
+            short = self.gen_random_string()
             redis_server.hset(url, "short", short)
             redis_server.hset(url, "title", title)
             redis_server.hset(url, "source", source)
             redis_server.hset(url, "time", time.gmtime())
+
+    def redis_exists(self, key, value):
+        if redis_server.hexists(key, value):
+            return 1
+        else:
+            return 0
 
     def parse_url(self, msg):
         browser = mechanize.Browser()
@@ -47,6 +51,12 @@ class TeddyBot (ircbot.SingleServerIRCBot):
 
     def redis_read_last(self, key):
         return redis_server.get(key)
+
+    def redis_get_value(self, key, value):
+        if self.redis_exists(key, value):
+            return redis_server.hget(key, value);
+        else:
+            return () 
 
     def on_pubmsg (self, connection, event):
         source = event.source().split ('!') [0]
@@ -60,7 +70,10 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         if msg.lower().startswith("!%s" % "last"):
             parse_last = re.split(' ', msg.strip())
             if len(parse_last) == 2 :
-               connection.privmsg(channel, self.redis_read_last(parse_last[1]))
+               url = self.redis_read_last(parse_last[1])
+               title = self.redis_get_value(url,"title")
+               connection.privmsg(channel, url)
+               connection.privmsg(channel, title)
             else :
                 connection.privmsg(channel, "!last username")
 
