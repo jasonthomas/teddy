@@ -11,6 +11,9 @@ import time
 import random
 import string
 import ConfigParser
+import eliza
+
+
 
 config = ConfigParser.RawConfigParser()
 config.read("teddy.cfg")
@@ -35,7 +38,6 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         browser = mechanize.Browser()
         browser.open(msg)
         return browser.title()
-
 
     def redis_exists(self, key, value):
         if redis_server.hexists(key, value):
@@ -62,6 +64,10 @@ class TeddyBot (ircbot.SingleServerIRCBot):
 
     def redis_write_last(self, key, value):
         redis_server.set(key,value)
+
+    def teddy_ai(self, msg):
+        teddy_brain = eliza.eliza()
+        return teddy_brain.respond(msg)
 
     def on_pubmsg (self, connection, event):
         source = event.source().split ('!') [0]
@@ -105,6 +111,9 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                 connection.privmsg(channel, "jason didnt design me with proper logic")
             except:
                 connection.privmsg(channel, source + " what did you send me?")
+        if re.search("teddy",msg.lower()):
+            teddy_response = self.teddy_ai(msg.lower())
+            connection.privmsg(channel, source + ": " + teddy_response)
          
 bot = TeddyBot ([( network, port )], nick, name)
 bot.start() 
