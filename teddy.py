@@ -107,10 +107,8 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                 self.redis_write_last(source, parse_string)
                 self.redis_write(source, parse_string, title)
                 connection.privmsg(channel, title)
-            except IOError:
-                connection.privmsg(channel, "jason didnt design me with proper logic")
             except:
-                connection.privmsg(channel, source + " what did you send me?")
+                print "Unexpected error:", sys.exc_info()[0]
         if re.search("teddy",msg.lower()):
             teddy_response = self.teddy_ai(msg.lower())
             connection.privmsg(channel, source + ": " + teddy_response)
