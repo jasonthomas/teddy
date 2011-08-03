@@ -31,6 +31,27 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         char_set = string.ascii_lowercase + string.digits
         return ''.join(random.sample(char_set,10))
 
+    def parse_url(self, msg):
+        browser = mechanize.Browser()
+        browser.open(msg)
+        return browser.title()
+
+
+    def redis_exists(self, key, value):
+        if redis_server.hexists(key, value):
+            return 1
+        else:
+            return 0
+
+    def redis_get_value(self, key, value):
+        if self.redis_exists(key, value):
+            return redis_server.hget(key, value);
+        else:
+            return () 
+
+    def redis_read_last(self, key):
+        return redis_server.get(key)
+
     def redis_write(self, source, url, title):
         if not self.redis_exists(url, title):
             short = self.gen_random_string()
@@ -39,28 +60,8 @@ class TeddyBot (ircbot.SingleServerIRCBot):
             redis_server.hset(url, "source", source)
             redis_server.hset(url, "time", time.gmtime())
 
-    def redis_exists(self, key, value):
-        if redis_server.hexists(key, value):
-            return 1
-        else:
-            return 0
-
-    def parse_url(self, msg):
-        browser = mechanize.Browser()
-        browser.open(msg)
-        return browser.title()
-        
     def redis_write_last(self, key, value):
         redis_server.set(key,value)
-
-    def redis_read_last(self, key):
-        return redis_server.get(key)
-
-    def redis_get_value(self, key, value):
-        if self.redis_exists(key, value):
-            return redis_server.hget(key, value);
-        else:
-            return () 
 
     def on_pubmsg (self, connection, event):
         source = event.source().split ('!') [0]
