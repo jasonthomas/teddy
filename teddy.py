@@ -25,6 +25,7 @@ nick = config.get('irc', 'nick')
 name = config.get('irc', 'name')
 key = config.get('irc', 'key')
 
+teddy_mute = 'no'
 redis_server = redis.Redis(config.get('redis', 'host'))
 
 class TeddyBot (ircbot.SingleServerIRCBot):
@@ -81,12 +82,19 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         source = event.source().split ('!') [0]
         channel = event.target()
         msg = event.arguments()[0]
+        global teddy_mute
         
         if msg.lower().startswith("!%s" % self._nickname):
-            connection.privmsg(channel, 'hello ' + source)
-
-        if msg.lower().startswith("!%s" % "penis"):
-            connection.privmsg(channel, source + ' what are you saying ??')
+            parse_last = re.split(' ', msg.strip())
+            if len(parse_last) == 2 :
+                if source == 'jason' and parse_last[1] == 'mute':
+                    teddy_mute = 'yes'
+                    connection.privmsg(channel, 'i will stop talking now ' + source)
+            elif source == 'jason' and parse_last[1] == 'unmute':
+                    teddy_mute = 'no'
+                    connection.privmsg(channel, 'lets talk ' + source)
+            else:
+                connection.privmsg(channel, 'hello ' + source)
 
         if msg.lower().startswith("!%s" % "all"):
             parse_last = re.split(' ', msg.strip())
@@ -127,7 +135,7 @@ class TeddyBot (ircbot.SingleServerIRCBot):
             except:
                 print "Unexpected error:", sys.exc_info()[0]
 
-        if re.search("teddy",msg.lower()):
+        if re.search("teddy",msg.lower()) and teddy_mute == 'no':
             teddy_response = self.teddy_ai(msg.lower())
             connection.privmsg(channel, source + ": " + teddy_response)
          
