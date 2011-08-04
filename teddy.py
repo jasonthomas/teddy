@@ -23,12 +23,13 @@ port = config.getint('irc', 'port')
 channel = config.get('irc', 'channel')
 nick = config.get('irc', 'nick')
 name = config.get('irc', 'name')
+key = config.get('irc', 'key')
 
 redis_server = redis.Redis(config.get('redis', 'host'))
 
 class TeddyBot (ircbot.SingleServerIRCBot):
     def on_welcome (self, connection, event):
-        connection.join ( channel )
+        connection.join(channel, key)
 
     def gen_random_string(self):
         char_set = string.ascii_lowercase + string.digits
@@ -69,6 +70,13 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         teddy_brain = eliza.eliza()
         return teddy_brain.respond(msg)
 
+    def url_by_source(self, source):
+        myurl = []
+        for url in redis_server.keys('http*'):
+            if redis_server.hget(url, 'source') == source:
+                myurl.append(url)
+        return myurl
+
     def on_pubmsg (self, connection, event):
         source = event.source().split ('!') [0]
         channel = event.target()
@@ -76,8 +84,16 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         
         if msg.lower().startswith("!%s" % self._nickname):
             connection.privmsg(channel, 'hello ' + source)
+
         if msg.lower().startswith("!%s" % "penis"):
             connection.privmsg(channel, source + ' what are you saying ??')
+
+        if msg.lower().startswith("!%s" % "all"):
+            parse_last = re.split(' ', msg.strip())
+            if len(parse_last) == 2 :
+                for url in self.url_by_source(parse_last[1]):
+                    connection.privmsg(source, url)
+
         if msg.lower().startswith("!%s" % "last"):
             parse_last = re.split(' ', msg.strip())
             if len(parse_last) == 2 :
@@ -99,6 +115,7 @@ class TeddyBot (ircbot.SingleServerIRCBot):
             connection.privmsg(channel, ">|D:")
             connection.privmsg(channel, ">/D:")
             connection.privmsg(channel, ">|D:")
+
         if re.search("http",msg.lower()):
             try:
                 parse_string = msg[msg.find("http://"):]
@@ -109,6 +126,7 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                 connection.privmsg(channel, title)
             except:
                 print "Unexpected error:", sys.exc_info()[0]
+
         if re.search("teddy",msg.lower()):
             teddy_response = self.teddy_ai(msg.lower())
             connection.privmsg(channel, source + ": " + teddy_response)
