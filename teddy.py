@@ -109,6 +109,11 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                title = self.redis_get_value(url,"title")
                connection.privmsg(channel, url)
                connection.privmsg(channel, title)
+            elif len(parse_last)==1 :
+               url = self.redis_read_last(source)
+               title = self.redis_get_value(url,"title")
+               connection.privmsg(channel, url)
+               connection.privmsg(channel, title)
             else :
                 connection.privmsg(channel, "!last username")
 
