@@ -90,7 +90,7 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                 if source == 'jason' and parse_last[1] == 'mute':
                     teddy_mute = 'yes'
                     connection.privmsg(channel, 'i will stop talking now ' + source)
-            elif source == 'jason' and parse_last[1] == 'unmute':
+                elif source == 'jason' and parse_last[1] == 'unmute':
                     teddy_mute = 'no'
                     connection.privmsg(channel, 'lets talk ' + source)
             else:
