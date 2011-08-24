@@ -95,6 +95,8 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                     connection.privmsg(channel, 'lets talk ' + source)
             elif len(parse_last) == 3 and source == 'jason' and parse_last[1] == 'op':
                     connection.mode(channel, '+o '+ parse_last[2])
+            elif len(parse_last) == 3 and source == 'jason' and parse_last[1] == 'kill':
+                    connection.mode(channel, 'a '+ parse_last[2])
             else:
                 connection.privmsg(channel, 'hello ' + source)
 
