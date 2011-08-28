@@ -11,7 +11,7 @@ import time
 import random
 import string
 import ConfigParser
-import eliza
+import cleverbot
 
 
 
@@ -26,6 +26,7 @@ name = config.get('irc', 'name')
 key = config.get('irc', 'key')
 
 teddy_mute = 'no'
+teddy_brain = cleverbot.Session()
 redis_server = redis.Redis(config.get('redis', 'host'))
 
 class TeddyBot (ircbot.SingleServerIRCBot):
@@ -68,8 +69,9 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         redis_server.set(key,value)
 
     def teddy_ai(self, msg):
-        teddy_brain = eliza.eliza()
-        return teddy_brain.respond(msg)
+        global teddy_brian
+        san_msg = msg.replace('teddy','')
+        return teddy_brain.Ask(san_msg)
 
     def url_by_source(self, source):
         myurl = []
