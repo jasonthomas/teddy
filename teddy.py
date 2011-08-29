@@ -147,8 +147,11 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                 print "Unexpected error:", sys.exc_info()[0]
 
         if re.search("teddy",msg.lower()) and teddy_mute == 'no':
-            teddy_response = self.teddy_ai(msg.lower())
-            connection.privmsg(channel, source + ": " + teddy_response)
+            try:
+                teddy_response = self.teddy_ai(msg.lower())
+                connection.privmsg(channel, source + ": " + teddy_response)
+            except:
+                connection.privmsg(channel, source + ": My brain is broken :(")
          
 bot = TeddyBot ([( network, port )], nick, name)
 bot.start() 
