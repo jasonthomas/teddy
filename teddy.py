@@ -11,8 +11,7 @@ import time
 import random
 import string
 import ConfigParser
-import cleverbot
-
+from chatterbotapi import ChatterBotFactory, ChatterBotType
 
 
 config = ConfigParser.RawConfigParser()
@@ -26,8 +25,11 @@ name = config.get('irc', 'name')
 key = config.get('irc', 'key')
 
 teddy_mute = 'no'
-teddy_brain = cleverbot.Session()
 redis_server = redis.Redis(config.get('redis', 'host'))
+factory = ChatterBotFactory()
+teddy_brain = factory.create(ChatterBotType.CLEVERBOT)
+teddy_session = teddy_brain.create_session()
+
 
 class TeddyBot (ircbot.SingleServerIRCBot):
     def on_welcome (self, connection, event):
@@ -71,7 +73,7 @@ class TeddyBot (ircbot.SingleServerIRCBot):
     def teddy_ai(self, msg):
         global teddy_brian
         san_msg = msg.replace('teddy','')
-        return teddy_brain.Ask(san_msg)
+        return teddy_session.think(san_msg)
 
     def url_by_source(self, source):
         myurl = []
