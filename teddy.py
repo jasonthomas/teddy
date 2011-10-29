@@ -82,6 +82,13 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                 myurl.append(url)
         return myurl
 
+    def url_by_search(self, searchstr):
+        myurl = []
+        for url in redis_server.keys('http*'):
+            if re.search(searchstr, url.lower()):
+                myurl.append(url)
+        return myurl
+
     def on_pubmsg (self, connection, event):
         source = event.source().split ('!') [0]
         channel = event.target()
@@ -108,6 +115,12 @@ class TeddyBot (ircbot.SingleServerIRCBot):
             parse_last = re.split(' ', msg.strip())
             if len(parse_last) == 2 :
                 for url in self.url_by_source(parse_last[1]):
+                    connection.privmsg(source, url)
+
+        if msg.lower().startswith("!%s" % "search"):
+            parse_last = re.split(' ', msg.strip())
+            if len(parse_last) == 2 :
+                for url in self.url_by_search(parse_last[1]):
                     connection.privmsg(source, url)
 
         if msg.lower().startswith("!%s" % "last"):
@@ -139,7 +152,7 @@ class TeddyBot (ircbot.SingleServerIRCBot):
 
         if re.search("http",msg.lower()):
             try:
-                parse_string = msg[msg.find("http://"):]
+                parse_string = msg[msg.find("http"):]
                 parse_string  = parse_string.strip()
                 title = self.parse_url(parse_string)
                 self.redis_write_last(source, parse_string)
