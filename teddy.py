@@ -11,6 +11,8 @@ import time
 import random
 import string
 import ConfigParser
+import aiml
+import os.path
 from chatterbotapi import ChatterBotFactory, ChatterBotType
 
 
@@ -26,9 +28,12 @@ key = config.get('irc', 'key')
 
 teddy_mute = 'no'
 redis_server = redis.Redis(config.get('redis', 'host'))
-factory = ChatterBotFactory()
-teddy_brain = factory.create(ChatterBotType.CLEVERBOT)
-teddy_session = teddy_brain.create_session()
+teddy_brain = aiml.Kernel()
+if os.path.isfile("standard.brn"):
+    teddy_brain.bootstrap(brainFile = "standard.brn")
+else:
+    teddy_brain.bootstrap(learnFiles = "std-startup.xml", commands = "load aiml b")
+    teddy_brain.saveBrain("standard.brn")
 
 
 class TeddyBot (ircbot.SingleServerIRCBot):
@@ -71,9 +76,9 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         redis_server.set(key,value)
 
     def teddy_ai(self, msg):
-        global teddy_brian
+        global teddy_brain
         san_msg = msg.replace('teddy','')
-        return teddy_session.think(san_msg)
+        return teddy_brain.respond(san_msg)
 
     def url_by_source(self, source):
         myurl = []
