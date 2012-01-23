@@ -44,28 +44,22 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         browser.open(msg)
         return browser.title()
 
-    def redis_exists(self, key, value):
-        if redis_server.hexists(key, value):
-            return 1
-        else:
-            return 0
-
     def redis_get_value(self, key, value):
-        if self.redis_exists(key, value):
-            return redis_server.hget(key, value);
-        else:
-            return () 
+        return redis_server.hget(key, value);
 
     def redis_read_last(self, key):
         return redis_server.get(key)
 
     def redis_write(self, source, url, title):
-        if not self.redis_exists(url, title):
+        if self.redis_get_value(url, 'short') == None:
             short = self.gen_random_string()
             redis_server.hset(url, "short", short)
             redis_server.hset(url, "title", title)
             redis_server.hset(url, "source", source)
             redis_server.hset(url, "time", time.gmtime())
+            return short
+        else:
+            return self.redis_get_value(url, 'short')
 
     def redis_write_last(self, key, value):
         redis_server.set(key,value)
@@ -150,14 +144,15 @@ class TeddyBot (ircbot.SingleServerIRCBot):
             connection.privmsg(channel, ">/D:")
             connection.privmsg(channel, ">|D:")
 
-        if re.search("http",msg.lower()):
+        if re.search("http",msg.lower()) and source != 'wesley':
             try:
                 parse_string = msg[msg.find("http"):]
                 parse_string  = parse_string.strip()
                 title = self.parse_url(parse_string)
                 self.redis_write_last(source, parse_string)
-                self.redis_write(source, parse_string, title)
+                short=self.redis_write(source, parse_string, title)
                 connection.privmsg(channel, title)
+                connection.privmsg(channel, "http://urld.us/" + short)
             except:
                 print "Unexpected error:", sys.exc_info()[0]
 
