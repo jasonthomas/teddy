@@ -56,12 +56,8 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         return self.query_mysql(sql)
 
     def get_short_from_db(self, key, value):
-            if key == "source":
-                sql = """SELECT short from url where %s='%s' ORDER BY timestamp DESC LIMIT 1""" % (key, value)
-                return self.query_mysql(sql)
-            if key == "url":
-                sql = """SELECT short from url where %s='%s' ORDER BY timestamp DESC LIMIT 1""" % (key, value)
-                return self.query_mysql(sql)
+        sql = """SELECT short from url where %s='%s' ORDER BY timestamp DESC LIMIT 1""" % (key, value)
+        return self.query_mysql(sql)
 
     def query_mysql(self, query):
         db=MySQLdb.connect(host=dbhost,user=dbuser,
