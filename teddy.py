@@ -36,9 +36,6 @@ factory = ChatterBotFactory()
 teddy_brain = factory.create(ChatterBotType.CLEVERBOT)
 teddy_session = teddy_brain.create_session()
 
-db=MySQLdb.connect(host=dbhost,user=dbuser,
-                  passwd=dbpass,db=dbname)
-cur=db.cursor()
 
 class TeddyBot (ircbot.SingleServerIRCBot):
     def on_welcome (self, connection, event):
@@ -48,37 +45,52 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         char_set = string.ascii_lowercase + string.digits
         return ''.join(random.sample(char_set,10))
 
-    def parse_url(self, msg):
+    def get_title(self, url):
         browser = mechanize.Browser()
-        browser.open(msg)
+        browser.open(url)
         return browser.title()
 
-    def redis_get_value(self, key, value):
-        return redis_server.hget(key, value);
+    def get_title_from_db(self, key, value):
+        clean_value = MySQLdb.escape_string(key)
+        sql = """SELECT title from url where %s='%s'""" % (key, value)
+        return self.query_mysql(sql)
 
-    def redis_read_last(self, key):
-        return redis_server.get(key)
+    def get_short_from_db(self, key, value):
+            if key == "source":
+                sql = """SELECT short from url where %s='%s' ORDER BY timestamp DESC LIMIT 1""" % (key, value)
+                return self.query_mysql(sql)
+            if key == "url":
+                sql = """SELECT short from url where %s='%s' ORDER BY timestamp DESC LIMIT 1""" % (key, value)
+                return self.query_mysql(sql)
 
-    def redis_write(self, source, url, title):
-        if self.redis_get_value(url, 'short') == None:
+    def query_mysql(self, query):
+        db=MySQLdb.connect(host=dbhost,user=dbuser,
+                           passwd=dbpass,db=dbname)
+        cur=db.cursor()
+        try:
+            cur.execute(query)
+            db.commit()
+            if int(cur.rowcount) == 1: 
+                return cur.fetchone()[0]
+            else:
+                return cur.fetchall()
+        except:
+            db.rollback()
+            print "Unexpected error:", sys.exc_info()
+
+
+    def write_url_to_db(self, source, url):
+        short = self.get_short_from_db("url", url)
+        if len(short) == 0:
+            title = self.get_title(url)
             clean_title = MySQLdb.escape_string(title)
             short = self.gen_random_string()
-            redis_server.hset(url, "short", short)
-            redis_server.hset(url, "title", title)
-            redis_server.hset(url, "source", source)
-            redis_server.hset(url, "time", time.gmtime())
             sql = """INSERT INTO url (short, url, title, source) VALUES ("%s", "%s", "%s", "%s")""" % (short, url, clean_title, source)
-            try: 
-                cur.execute(sql)
-                db.commit()
-            except:
-                print "Unexpected error:", sys.exc_info()[0]
+            self.query_mysql(sql)
             return short
         else:
-            return self.redis_get_value(url, 'short')
+            return short
 
-    def redis_write_last(self, key, value):
-        redis_server.set(key,value)
 
     def teddy_ai(self, msg):
         global teddy_brian
@@ -136,15 +148,15 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         if msg.lower().startswith("!%s" % "last"):
             parse_last = re.split(' ', msg.strip())
             if len(parse_last) == 2 :
-               url = self.redis_read_last(parse_last[1])
-               title = self.redis_get_value(url,"title")
-               connection.privmsg(channel, url)
+               short = self.get_short_from_db('source', parse_last[1])
+               title = self.get_title_from_db('short', short)
                connection.privmsg(channel, title)
+               connection.privmsg(channel, "http://wgeturl.com/" + short)
             elif len(parse_last)==1 :
-               url = self.redis_read_last(source)
-               title = self.redis_get_value(url,"title")
-               connection.privmsg(channel, url)
+               short = self.get_short_from_db('source', source)
+               title = self.get_title_from_db('short', short)
                connection.privmsg(channel, title)
+               connection.privmsg(channel, "http://wgeturl.com/" + short)
             else :
                 connection.privmsg(channel, "!last username")
 
@@ -163,15 +175,14 @@ class TeddyBot (ircbot.SingleServerIRCBot):
         if re.search("http",msg.lower()) and source != 'wesley':
             try:
                 parse_string = msg[msg.find("http"):]
-                parse_string  = parse_string.strip()
-                title = self.parse_url(parse_string)
-                self.redis_write_last(source, parse_string)
-                short=self.redis_write(source, parse_string, title)
+                url = parse_string.strip()
+                short = self.write_url_to_db(source, url)
+                title = self.get_title_from_db('short', short)
                 connection.privmsg(channel, title)
                 if (len(parse_string) >= 29):
                     connection.privmsg(channel, "http://wgeturl.com/" + short)
             except:
-                print "Unexpected error:", sys.exc_info()[0]
+                print "Unexpected error:", sys.exc_info()
 
         if re.search("teddy",msg.lower()) and teddy_mute == 'no':
             try:
