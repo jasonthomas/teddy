@@ -12,6 +12,7 @@ import random
 import string
 import ConfigParser
 from chatterbotapi import ChatterBotFactory, ChatterBotType
+import MySQLdb
 
 
 config = ConfigParser.RawConfigParser()
@@ -24,12 +25,20 @@ nick = config.get('irc', 'nick')
 name = config.get('irc', 'name')
 key = config.get('irc', 'key')
 
+dbhost = config.get('mysql', 'host')
+dbuser = config.get('mysql', 'user')
+dbpass = config.get('mysql', 'password')
+dbname = config.get('mysql', 'name')
+
 teddy_mute = 'no'
 redis_server = redis.Redis(config.get('redis', 'host'))
 factory = ChatterBotFactory()
 teddy_brain = factory.create(ChatterBotType.CLEVERBOT)
 teddy_session = teddy_brain.create_session()
 
+db=MySQLdb.connect(host=dbhost,user=dbuser,
+                  passwd=dbpass,db=dbname)
+cur=db.cursor()
 
 class TeddyBot (ircbot.SingleServerIRCBot):
     def on_welcome (self, connection, event):
@@ -52,11 +61,18 @@ class TeddyBot (ircbot.SingleServerIRCBot):
 
     def redis_write(self, source, url, title):
         if self.redis_get_value(url, 'short') == None:
+            clean_title = MySQLdb.escape_string(title)
             short = self.gen_random_string()
             redis_server.hset(url, "short", short)
             redis_server.hset(url, "title", title)
             redis_server.hset(url, "source", source)
             redis_server.hset(url, "time", time.gmtime())
+            sql = """INSERT INTO url (short, url, title, source) VALUES ("%s", "%s", "%s", "%s")""" % (short, url, clean_title, source)
+            try: 
+                cur.execute(sql)
+                db.commit()
+            except:
+                print "Unexpected error:", sys.exc_info()[0]
             return short
         else:
             return self.redis_get_value(url, 'short')
@@ -152,7 +168,8 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                 self.redis_write_last(source, parse_string)
                 short=self.redis_write(source, parse_string, title)
                 connection.privmsg(channel, title)
-                connection.privmsg(channel, "http://urld.us/" + short)
+                if (len(parse_string) >= 29):
+                    connection.privmsg(channel, "http://wgeturl.com/" + short)
             except:
                 print "Unexpected error:", sys.exc_info()[0]
 
