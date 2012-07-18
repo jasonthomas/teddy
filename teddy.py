@@ -2,7 +2,8 @@
 ## monitor irc room for url. take url and paste them in backend. shorten url. comment. ask bot to replay last url.
 ## grab title of url
 
-import ircbot
+from twisted.words.protocols import irc
+from twisted.internet import reactor, protocol, ssl
 import sys
 import re
 import mechanize
@@ -38,9 +39,25 @@ teddy_brain = factory.create(ChatterBotType.CLEVERBOT)
 teddy_session = teddy_brain.create_session()
 
 
-class TeddyBot (ircbot.SingleServerIRCBot):
-    def on_welcome (self, connection, event):
-        connection.join(channel, key)
+class TeddyBot(irc.IRCClient):
+
+    nickname = nick
+
+    def connectionMade(self):
+        irc.IRCClient.connectionMade(self)
+
+    def connectionLost(self, reason):
+        irc.IRCClient.connectionLost(self, reason)
+
+    def signedOn(self):
+        """Called when bot has succesfully signed on to server."""
+        self.join(self.factory.channel, self.factory.key)
+
+    def joined(self, channel):
+        """This will get called when the bot joins the channel."""
+
+
+    # irc callbacks
 
     def gen_random_string(self):
         char_set = string.ascii_lowercase + string.digits
@@ -108,74 +125,73 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                 myurl.append(url)
         return myurl
 
-    def on_pubmsg (self, connection, event):
-        source = event.source().split ('!') [0]
-        channel = event.target()
-        msg = event.arguments()[0]
+    def privmsg(self, user, channel, msg):
+        """This will get called when the bot receives a message."""
+        source = user.split('!', 1)[0]
         global teddy_mute
         
-        if msg.lower().startswith("!%s" % self._nickname):
+        if msg.lower().startswith("!%s" % self.nickname):
             parse_last = re.split(' ', msg.strip())
             if len(parse_last) == 2 :
                 if source == 'jason' and parse_last[1] == 'mute':
                     teddy_mute = 'yes'
-                    connection.privmsg(channel, 'i will stop talking now ' + source)
+                    self.msg(channel, 'i will stop talking now ' + source)
                 elif source == 'jason' and parse_last[1] == 'unmute':
                     teddy_mute = 'no'
-                    connection.privmsg(channel, 'lets talk ' + source)
+                    self.msg(channel, 'lets talk ' + source)
             elif len(parse_last) == 3 and source == 'jason' and parse_last[1] == 'op':
                     connection.mode(channel, '+o '+ parse_last[2])
             elif len(parse_last) == 3 and source == 'jason' and parse_last[1] == 'kill':
                     connection.mode(channel, 'a '+ parse_last[2])
             else:
-                connection.privmsg(channel, 'hello ' + source)
+                self.msg(channel, 'hello ' + source)
 
         if msg.lower().startswith("!%s" % "all"):
             parse_last = re.split(' ', msg.strip())
             if len(parse_last) == 2 :
                 for url in self.url_by_source(parse_last[1]):
-                    connection.privmsg(source, url)
+                    self.msg(source, url)
 
         if msg.lower().startswith("!%s" % "search"):
             parse_last = re.split(' ', msg.strip())
             if len(parse_last) == 2 :
                 for url in self.url_by_search(parse_last[1]):
-                    connection.privmsg(source, url)
+                    self.msg(source, url)
 
         if msg.lower().startswith("!%s" % "last"):
             parse_last = re.split(' ', msg.strip())
             if len(parse_last) == 2 :
                short = self.get_short_from_db('source', parse_last[1])
                title = self.get_title_from_db('short', short)
-               connection.privmsg(channel, title)
-               connection.privmsg(channel, "http://wgeturl.com/" + short)
+               self.msg(channel, title)
+               self.msg(channel, "http://wgeturl.com/" + short)
             elif len(parse_last)==1 :
                short = self.get_short_from_db('source', source)
                title = self.get_title_from_db('short', short)
-               connection.privmsg(channel, title)
-               connection.privmsg(channel, "http://wgeturl.com/" + short)
+               self.msg(channel, title)
+               self.msg(channel, "http://wgeturl.com/" + short)
             else :
-                connection.privmsg(channel, "!last username")
+                self.msg(channel, "!last username")
 
         if msg.lower().startswith("!%s" % "stock"):
             parse_last = re.split(' ', msg.strip())
             try:
                 stock_data = stock.get(parse_last[1])
-                connection.privmsg(channel, stock_data)
+                self.msg(channel, stock_data)
             except:
                 print "Unexpected error:", sys.exc_info()
 
         if msg.lower().startswith("!%s" % "dance"):
-            connection.privmsg(channel, ":D\<")
-            connection.privmsg(channel, ":D|<")
-            connection.privmsg(channel, ":D/<")
-            connection.privmsg(channel, ":D|<")
+            self.msg(channel, ":D\<")
+            self.msg(channel, ":D|<")
+            self.msg(channel, ":D/<")
+            self.msg(channel, ":D|<")
 
         if msg.lower().startswith("!%s" % "angrydance"):
-            connection.privmsg(channel, ">\D:")
-            connection.privmsg(channel, ">|D:")
-            connection.privmsg(channel, ">/D:")
-            connection.privmsg(channel, ">|D:")
+            self.msg(channel, ">\D:")
+            self.msg(channel, ">|D:")
+            self.msg(channel, ">/D:")
+            self.msg(channel, ">|D:")
 
         if re.search("http",msg.lower()) and source != 'wesley':
             try:
@@ -183,18 +199,45 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                 url = parse_string.strip()
                 short = self.write_url_to_db(source, url)
                 title = self.get_title_from_db('short', short)
-                connection.privmsg(channel, title)
+                self.msg(channel, title)
                 if (len(parse_string) >= 29):
-                    connection.privmsg(channel, "http://wgeturl.com/" + short)
+                    self.msg(channel, "http://wgeturl.com/" + short)
             except:
                 print "Unexpected error:", sys.exc_info()
 
         if re.search("teddy",msg.lower()) and teddy_mute == 'no':
             try:
                 teddy_response = self.teddy_ai(msg.lower())
-                connection.privmsg(channel, source + ": " + teddy_response)
+                self.msg(channel, source + ": " + teddy_response)
             except:
-                connection.privmsg(channel, source + ": My brain is broken :(")
+                self.msg(channel, source + ": My brain is broken :(")
          
-bot = TeddyBot ([( network, port )], nick, name)
-bot.start() 
+class TeddyBotFactory(protocol.ClientFactory):
+    protocol = TeddyBot
+
+    def __init__(self, channel, key):
+        self.channel = channel
+        self.key = key
+
+    def buildProtocol(self, addr):
+        p = TeddyBot()
+        p.factory = self
+        return p
+
+    def clientConnectionLost(self, connector, reason):
+        """If we get disconnected, reconnect to server."""
+        connector.connect()
+
+    def clientConnectionFailed(self, connector, reason):
+        print "connection failed:", reason
+        reactor.stop()
+
+if __name__ == '__main__':
+    # create factory protocol and application
+    bot = TeddyBotFactory(channel,key)
+
+    # connect factory to this host and port
+    reactor.connectSSL(network, port, bot, ssl.ClientContextFactory())
+
+    # run bot
+    reactor.run()
