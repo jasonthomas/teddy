@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/python2.6
 ## monitor irc room for url. take url and paste them in backend. shorten url. comment. ask bot to replay last url.
 ## grab title of url
 
@@ -7,6 +7,7 @@ import sys
 import re
 import mechanize
 import redis
+import stock
 import time
 import random
 import string
@@ -52,11 +53,11 @@ class TeddyBot (ircbot.SingleServerIRCBot):
 
     def get_title_from_db(self, key, value):
         clean_value = MySQLdb.escape_string(key)
-        sql = """SELECT title from url where %s='%s'""" % (key, value)
+        sql = """SELECT title from redirect_url where %s='%s'""" % (key, value)
         return self.query_mysql(sql)
 
     def get_short_from_db(self, key, value):
-        sql = """SELECT short from url where %s='%s' ORDER BY timestamp DESC LIMIT 1""" % (key, value)
+        sql = """SELECT short from redirect_url where %s='%s' ORDER BY timestamp DESC LIMIT 1""" % (key, value)
         return self.query_mysql(sql)
 
     def query_mysql(self, query):
@@ -81,7 +82,7 @@ class TeddyBot (ircbot.SingleServerIRCBot):
             title = self.get_title(url)
             clean_title = MySQLdb.escape_string(title)
             short = self.gen_random_string()
-            sql = """INSERT INTO url (short, url, title, source) VALUES ("%s", "%s", "%s", "%s")""" % (short, url, clean_title, source)
+            sql = """INSERT INTO redirect_url (short, url, title, source) VALUES ("%s", "%s", "%s", "%s")""" % (short, url, clean_title, source)
             self.query_mysql(sql)
             return short
         else:
@@ -155,6 +156,14 @@ class TeddyBot (ircbot.SingleServerIRCBot):
                connection.privmsg(channel, "http://wgeturl.com/" + short)
             else :
                 connection.privmsg(channel, "!last username")
+
+        if msg.lower().startswith("!%s" % "stock"):
+            parse_last = re.split(' ', msg.strip())
+            try:
+                stock_data = stock.get(parse_last[1])
+                connection.privmsg(channel, stock_data)
+            except:
+                print "Unexpected error:", sys.exc_info()
 
         if msg.lower().startswith("!%s" % "dance"):
             connection.privmsg(channel, ":D\<")
