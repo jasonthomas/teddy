@@ -61,8 +61,9 @@ class TeddyBot(irc.IRCClient):
 
     def get_title(self, url):
         browser = mechanize.Browser()
-        browser.open(url)
-        return browser.title()
+        try:
+            browser.open(url)
+            return browser.title()
 
     def get_title_from_db(self, key, value):
         clean_value = MySQLdb.escape_string(key)
@@ -86,7 +87,6 @@ class TeddyBot(irc.IRCClient):
                 return cur.fetchall()
         except:
             db.rollback()
-            print "Unexpected error:", sys.exc_info()
 
 
     def write_url_to_db(self, source, url):
@@ -95,7 +95,8 @@ class TeddyBot(irc.IRCClient):
             title = self.get_title(url)
             clean_title = MySQLdb.escape_string(title)
             short = self.gen_random_string()
-            sql = """INSERT INTO redirect_url (short, url, title, source) VALUES ("%s", "%s", "%s", "%s")""" % (short, url, clean_title, source)
+            timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+            sql = """INSERT INTO redirect_url (short, url, title, source, timestamp) VALUES ("%s", "%s", "%s", "%s", "%s")""" % (short, url, clean_title, source, timestamp)
             self.query_mysql(sql)
             return short
         else:
