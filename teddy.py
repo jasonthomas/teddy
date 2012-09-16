@@ -61,9 +61,12 @@ class TeddyBot(irc.IRCClient):
 
     def get_title(self, url):
         browser = mechanize.Browser()
+        browser.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 6.1; rv:15.0) Gecko/20120716 Firefox/15.0a2')]
         try:
             browser.open(url)
             return browser.title()
+        except:
+            print "Unexpected error:", sys.exc_info()
 
     def get_title_from_db(self, key, value):
         clean_value = MySQLdb.escape_string(key)
