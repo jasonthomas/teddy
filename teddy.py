@@ -40,10 +40,10 @@ teddy_session = teddy_brain.create_session()
 
 
 class TeddyBot(irc.IRCClient):
+    nickname = nick
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
-        self.setNick(self.factory.nickname)
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
@@ -215,10 +215,9 @@ class TeddyBot(irc.IRCClient):
 class TeddyBotFactory(protocol.ClientFactory):
     protocol = TeddyBot
 
-    def __init__(self, channel, key, nick):
+    def __init__(self, channel, key):
         self.channel = channel
         self.key = key
-        self.nickname = nick
 
     def buildProtocol(self, addr):
         p = TeddyBot()
@@ -235,7 +234,7 @@ class TeddyBotFactory(protocol.ClientFactory):
 
 if __name__ == '__main__':
     # create factory protocol and application
-    bot = TeddyBotFactory(channel, key, nick)
+    bot = TeddyBotFactory(channel, key)
 
     # connect factory to this host and port
     reactor.connectSSL(network, port, bot, ssl.ClientContextFactory())
