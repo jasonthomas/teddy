@@ -186,11 +186,12 @@ class TeddyBot(irc.IRCClient):
         if msg.lower().startswith("!%s" % "moofi"):
             parse_last = re.split(' ', msg.strip())
             try:
-                item = woot.get(woot_key, event='moofi')
-                output = "%s - Sale:$%s List:$%s" % (item['title'], item['saleprice'], item['listprice'])
-                short = self.write_url_to_db(source, item['url'])
-                self.msg(channel, output)
-                self.msg(channel, "http://wgeturl.com/" + short)
+                items = woot.get(woot_key, event='moofi')
+                for item in items:
+                    output = "%s - Sale:$%s List:$%s" % (item['title'], item['saleprice'], item['listprice'])
+                    short = self.write_url_to_db(source, item['url'])
+                    self.msg(channel, output)
+                    self.msg(channel, "http://wgeturl.com/" + short)
             except:
                 print "Unexpected error:", sys.exc_info()
 
