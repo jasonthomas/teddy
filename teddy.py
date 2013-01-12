@@ -194,6 +194,17 @@ class TeddyBot(irc.IRCClient):
             except:
                 print "Unexpected error:", sys.exc_info()
 
+        if msg.lower().startswith("!%s" % "woot"):
+            parse_last = re.split(' ', msg.strip())
+            try:
+                item = woot.get(woot_key)
+                output = "%s - Sale:$%s List:$%s" % (item['title'], item['saleprice'], item['listprice'])
+                short = self.write_url_to_db(source, item['url'])
+                self.msg(channel, output)
+                self.msg(channel, "http://wgeturl.com/" + short)
+            except:
+                print "Unexpected error:", sys.exc_info()
+
         if msg.lower().startswith("!%s" % "dance"):
             self.msg(channel, ":D\<")
             self.msg(channel, ":D|<")
