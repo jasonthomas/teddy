@@ -15,6 +15,7 @@ import string
 import ConfigParser
 from chatterbotapi import ChatterBotFactory, ChatterBotType
 import MySQLdb
+import woot
 
 
 config = ConfigParser.RawConfigParser()
@@ -31,6 +32,7 @@ dbhost = config.get('mysql', 'host')
 dbuser = config.get('mysql', 'user')
 dbpass = config.get('mysql', 'password')
 dbname = config.get('mysql', 'name')
+woot_key = config.get('woot', 'key')
 
 teddy_mute = 'no'
 redis_server = redis.Redis(config.get('redis', 'host'))
@@ -178,6 +180,17 @@ class TeddyBot(irc.IRCClient):
             try:
                 stock_data = stock.get(parse_last[1])
                 self.msg(channel, stock_data)
+            except:
+                print "Unexpected error:", sys.exc_info()
+
+        if msg.lower().startswith("!%s" % "moofi"):
+            parse_last = re.split(' ', msg.strip())
+            try:
+                item = woot.get(woot_key, event='moofi')
+                output = "%s - Sale:$%s List:$%s" % (item['title'], item['saleprice'], item['listprice'])
+                short = self.write_url_to_db(source, item['url'])
+                self.msg(channel, output)
+                self.msg(channel, "http://wgeturl.com/" + short)
             except:
                 print "Unexpected error:", sys.exc_info()
 
