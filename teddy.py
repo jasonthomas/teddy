@@ -37,7 +37,7 @@ woot_key = config.get('woot', 'key')
 teddy_mute = 'no'
 redis_server = redis.Redis(config.get('redis', 'host'))
 factory = ChatterBotFactory()
-teddy_brain = factory.create(ChatterBotType.CLEVERBOT)
+teddy_brain = factory.create(ChatterBotType.JABBERWACKY)
 teddy_session = teddy_brain.create_session()
 
 
