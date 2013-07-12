@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*- 
 #!/usr/bin/python2.6
 ## monitor irc room for url. take url and paste them in backend. shorten url. comment. ask bot to replay last url.
 ## grab title of url
@@ -16,6 +17,7 @@ import ConfigParser
 from chatterbotapi import ChatterBotFactory, ChatterBotType
 import MySQLdb
 import woot
+import upsidedown
 
 
 config = ConfigParser.RawConfigParser()
@@ -180,6 +182,15 @@ class TeddyBot(irc.IRCClient):
             try:
                 stock_data = stock.get(parse_last[1])
                 self.msg(channel, stock_data)
+            except:
+                print "Unexpected error:", sys.exc_info()
+
+        if msg.lower().startswith("!%s" % "flip"):
+            parse_last = re.split(' ', msg.strip())
+            try:
+		angry = '(╯°□°)╯︵ '
+                flip = upsidedown.transform(parse_last[1])
+                self.msg(channel, angry + flip.encode('utf-8'))
             except:
                 print "Unexpected error:", sys.exc_info()
 
