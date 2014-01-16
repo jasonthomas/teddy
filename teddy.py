@@ -13,39 +13,31 @@ import stock
 import time
 import random
 import string
-import ConfigParser
 from chatterbotapi import ChatterBotFactory, ChatterBotType
 import MySQLdb
 import woot
 import upsidedown
 
+import settings
 
-config = ConfigParser.RawConfigParser()
-config.read("teddy.cfg")
+networks = settings.NETWORKS
+identity = settings.IDENTITY
 
-network = config.get('irc', 'network')
-port = config.getint('irc', 'port')
-channel = config.get('irc', 'channel')
-nick = config.get('irc', 'nick')
-name = config.get('irc', 'name')
-key = config.get('irc', 'key')
-
-dbhost = config.get('mysql', 'host')
-dbuser = config.get('mysql', 'user')
-dbpass = config.get('mysql', 'password')
-dbname = config.get('mysql', 'name')
-woot_key = config.get('woot', 'key')
+dbhost = settings.MYSQL_HOST
+dbuser = settings.MYSQL_USER
+dbpass = settings.MYSQL_PASSWORD
+dbname = settings.MYSQL_DB
+woot_key = settings.WOOT_KEY
 
 teddy_mute = 'no'
-redis_server = redis.Redis(config.get('redis', 'host'))
+redis_server = redis.Redis(settings.REDIS_HOST)
+
 factory = ChatterBotFactory()
 teddy_brain = factory.create(ChatterBotType.JABBERWACKY)
 teddy_session = teddy_brain.create_session()
 
 
 class TeddyBot(irc.IRCClient):
-    nickname = nick
-
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
 
@@ -54,10 +46,33 @@ class TeddyBot(irc.IRCClient):
 
     def signedOn(self):
         """Called when bot has succesfully signed on to server."""
-        self.join(self.factory.channel, self.factory.key)
+        print('teddy bot signed on')
+
+        network = self.factory.network
+
+        if network['identity']['nickserv_pw']:
+            self.msg('NickServ', 
+                'IDENTIFY %s' % network['identity']['nickserv_pw'])
+
+        for channel, key in network['autojoin']:
+            print('join channel %s' % channel)
+            self.join(channel, key)
 
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
+
+    def _get_nickname(self):
+        return self.factory.network['identity']['nickname']
+
+    def _get_realname(self):
+        return self.factory.network['identity']['realname']
+
+    def _get_username(self):
+        return self.factory.network['identity']['username']
+
+    nickname = property(_get_nickname)
+    realname = property(_get_realname)
+    username = property(_get_username)
 
     def gen_random_string(self):
         char_set = string.ascii_lowercase + string.digits
@@ -248,32 +263,32 @@ class TeddyBot(irc.IRCClient):
             except:
                 self.msg(channel, source + ": My brain is broken :(")
          
+
 class TeddyBotFactory(protocol.ClientFactory):
     protocol = TeddyBot
 
-    def __init__(self, channel, key):
-        self.channel = channel
-        self.key = key
-
-    def buildProtocol(self, addr):
-        p = TeddyBot()
-        p.factory = self
-        return p
+    def __init__(self, network_name, network):
+        self.network_name = network_name
+        self.network = network
 
     def clientConnectionLost(self, connector, reason):
-        """If we get disconnected, reconnect to server."""
+        print('client connection lost')
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
-        print "connection failed:", reason
+        print('client connection failed')
         reactor.stop()
 
 if __name__ == '__main__':
-    # create factory protocol and application
-    bot = TeddyBotFactory(channel, key)
+    for name in networks.keys():
+        factory = TeddyBotFactory(name, networks[name])
+        
+        host = networks[name]['host']
+        port = networks[name]['port']
 
-    # connect factory to this host and port
-    reactor.connectSSL(network, port, bot, ssl.ClientContextFactory())
+        if networks[name]['ssl']:
+            reactor.connectSSL(host, port, factory, ssl.ClientContextFactory())
+        else:
+            reactor.connectTCP(host, port, factory)
 
-    # run bot
     reactor.run()
