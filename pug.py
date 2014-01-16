@@ -2,7 +2,6 @@
 #jason thomas
 import mechanize
 import json
-import re
 
 
 def get():
