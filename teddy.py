@@ -1,10 +1,12 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*
 #!/usr/bin/python2.6
 ## monitor irc room for url. take url and paste them in backend. shorten url. comment. ask bot to replay last url.
 ## grab title of url
 
 from twisted.words.protocols import irc
 from twisted.internet import reactor, protocol, ssl
+from chatterbotapi import ChatterBotFactory, ChatterBotType
+from pug import get as getpug
 import sys
 import re
 import mechanize
@@ -13,7 +15,6 @@ import stock
 import time
 import random
 import string
-from chatterbotapi import ChatterBotFactory, ChatterBotType
 import MySQLdb
 import woot
 import upsidedown
@@ -51,8 +52,8 @@ class TeddyBot(irc.IRCClient):
         network = self.factory.network
 
         if network['identity']['nickserv_pw']:
-            self.msg('NickServ', 
-                'IDENTIFY %s' % network['identity']['nickserv_pw'])
+            self.msg('NickServ',
+                     'IDENTIFY %s' % network['identity']['nickserv_pw'])
 
         for channel, key in network['autojoin']:
             print('join channel %s' % channel)
@@ -76,7 +77,7 @@ class TeddyBot(irc.IRCClient):
 
     def gen_random_string(self):
         char_set = string.ascii_lowercase + string.digits
-        return ''.join(random.sample(char_set,10))
+        return ''.join(random.sample(char_set, 10))
 
     def get_title(self, url):
         browser = mechanize.Browser()
@@ -97,19 +98,18 @@ class TeddyBot(irc.IRCClient):
         return self.query_mysql(sql)
 
     def query_mysql(self, query):
-        db=MySQLdb.connect(host=dbhost,user=dbuser,
-                           passwd=dbpass,db=dbname)
-        cur=db.cursor()
+        db = MySQLdb.connect(host=dbhost, user=dbuser,
+                             passwd=dbpass, db=dbname)
+        cur = db.cursor()
         try:
             cur.execute(query)
             db.commit()
-            if int(cur.rowcount) == 1: 
+            if int(cur.rowcount) == 1:
                 return cur.fetchone()[0]
             else:
                 return cur.fetchall()
         except:
             db.rollback()
-
 
     def write_url_to_db(self, source, url):
         short = self.get_short_from_db("url", url)
@@ -124,10 +124,9 @@ class TeddyBot(irc.IRCClient):
         else:
             return short
 
-
     def teddy_ai(self, msg):
         global teddy_brian
-        san_msg = msg.replace('teddy','')
+        san_msg = msg.replace('teddy', '')
         return teddy_session.think(san_msg)
 
     def url_by_source(self, source):
@@ -148,10 +147,10 @@ class TeddyBot(irc.IRCClient):
         """This will get called when the bot receives a message."""
         source = user.split('!', 1)[0]
         global teddy_mute
-        
+
         if msg.lower().startswith("!%s" % self.nickname):
             parse_last = re.split(' ', msg.strip())
-            if len(parse_last) == 2 :
+            if len(parse_last) == 2:
                 if source == 'jason' and parse_last[1] == 'mute':
                     teddy_mute = 'yes'
                     self.msg(channel, 'i will stop talking now ' + source)
@@ -159,37 +158,37 @@ class TeddyBot(irc.IRCClient):
                     teddy_mute = 'no'
                     self.msg(channel, 'lets talk ' + source)
             elif len(parse_last) == 3 and source == 'jason' and parse_last[1] == 'op':
-                    connection.mode(channel, '+o '+ parse_last[2])
+                    connection.mode(channel, '+o ' + parse_last[2])
             elif len(parse_last) == 3 and source == 'jason' and parse_last[1] == 'kill':
-                    connection.mode(channel, 'a '+ parse_last[2])
+                    connection.mode(channel, 'a ' + parse_last[2])
             else:
                 self.msg(channel, 'hello ' + source)
 
         if msg.lower().startswith("!%s" % "all"):
             parse_last = re.split(' ', msg.strip())
-            if len(parse_last) == 2 :
+            if len(parse_last) == 2:
                 for url in self.url_by_source(parse_last[1]):
                     self.msg(source, url)
 
         if msg.lower().startswith("!%s" % "search"):
             parse_last = re.split(' ', msg.strip())
-            if len(parse_last) == 2 :
+            if len(parse_last) == 2:
                 for url in self.url_by_search(parse_last[1]):
                     self.msg(source, url)
 
         if msg.lower().startswith("!%s" % "last"):
             parse_last = re.split(' ', msg.strip())
-            if len(parse_last) == 2 :
-               short = self.get_short_from_db('source', parse_last[1])
-               title = self.get_title_from_db('short', short)
-               self.msg(channel, title)
-               self.msg(channel, "http://wgeturl.com/" + short)
-            elif len(parse_last)==1 :
-               short = self.get_short_from_db('source', source)
-               title = self.get_title_from_db('short', short)
-               self.msg(channel, title)
-               self.msg(channel, "http://wgeturl.com/" + short)
-            else :
+            if len(parse_last) == 2:
+                short = self.get_short_from_db('source', parse_last[1])
+                title = self.get_title_from_db('short', short)
+                self.msg(channel, title)
+                self.msg(channel, "http://wgeturl.com/" + short)
+            elif len(parse_last) == 1:
+                short = self.get_short_from_db('source', source)
+                title = self.get_title_from_db('short', short)
+                self.msg(channel, title)
+                self.msg(channel, "http://wgeturl.com/" + short)
+            else:
                 self.msg(channel, "!last username")
 
         if msg.lower().startswith("!%s" % "stock"):
@@ -203,7 +202,7 @@ class TeddyBot(irc.IRCClient):
         if msg.lower().startswith("!%s" % "flip"):
             parse_last = re.split(' ', msg.strip())
             try:
-		angry = '(╯°□°)╯︵ '
+                angry = '(╯°□°)╯︵ '
                 flip = upsidedown.transform(parse_last[1])
                 self.msg(channel, angry + flip.encode('utf-8'))
             except:
@@ -232,6 +231,9 @@ class TeddyBot(irc.IRCClient):
 #           except:
 #               print "Unexpected error:", sys.exc_info()
 
+        if msg.lower().startswith("!%s" % "pug me"):
+            self.msg(channel, getpug())
+
         if msg.lower().startswith("!%s" % "dance"):
             self.msg(channel, ":D\<")
             self.msg(channel, ":D|<")
@@ -244,7 +246,7 @@ class TeddyBot(irc.IRCClient):
             self.msg(channel, ">/D:")
             self.msg(channel, ">|D:")
 
-        if re.search("http",msg.lower()) and source != 'wesley':
+        if re.search("http", msg.lower()) and source != 'wesley':
             try:
                 parse_string = msg[msg.find("http"):]
                 url = parse_string.strip()
@@ -256,13 +258,13 @@ class TeddyBot(irc.IRCClient):
             except:
                 print "Unexpected error:", sys.exc_info()
 
-        if re.search("teddy",msg.lower()) and teddy_mute == 'no':
+        if re.search("teddy", msg.lower()) and teddy_mute == 'no':
             try:
                 teddy_response = self.teddy_ai(msg.lower())
                 self.msg(channel, source + ": " + teddy_response)
             except:
                 self.msg(channel, source + ": My brain is broken :(")
-         
+
 
 class TeddyBotFactory(protocol.ClientFactory):
     protocol = TeddyBot
@@ -282,7 +284,7 @@ class TeddyBotFactory(protocol.ClientFactory):
 if __name__ == '__main__':
     for name in networks.keys():
         factory = TeddyBotFactory(name, networks[name])
-        
+
         host = networks[name]['host']
         port = networks[name]['port']
 
