@@ -7,6 +7,7 @@ from twisted.words.protocols import irc
 from twisted.internet import reactor, protocol, ssl
 from chatterbotapi import ChatterBotFactory, ChatterBotType
 from pug import get as getpug
+from lgtm import get as getlgtm
 import sys
 import re
 import mechanize
@@ -57,7 +58,10 @@ class TeddyBot(irc.IRCClient):
 
         for channel, key in network['autojoin']:
             print('join channel %s' % channel)
-            self.join(channel, key)
+	    if key:
+                self.join(channel, key)
+	    else:
+                self.join(channel)
 
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
@@ -231,8 +235,11 @@ class TeddyBot(irc.IRCClient):
 #           except:
 #               print "Unexpected error:", sys.exc_info()
 
-        if msg.lower().startswith("!%s" % "pug me"):
+        if "pug me" in msg.lower():
             self.msg(channel, getpug())
+
+        if "lgtm" in msg.lower():
+            self.msg(channel, getlgtm())
 
         if msg.lower().startswith("!%s" % "dance"):
             self.msg(channel, ":D\<")
