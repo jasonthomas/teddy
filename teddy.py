@@ -205,10 +205,14 @@ class TeddyBot(irc.IRCClient):
 
         if msg.lower().startswith("!%s" % "flip"):
             parse_last = msg.strip().lstrip('!flip ')
+            angry = '(╯°□°)╯︵'
+            if parse_last:
+                flipit = '%s %s' % (angry, flip.encode('utf-8'))
+            else:
+                flipit = '%s %s' % (angry, '┻━┻ '.encode('utf-8'))
             try:
-                angry = '(╯°□°)╯︵ '
                 flip = upsidedown.transform(parse_last)
-                self.msg(channel, angry + flip.encode('utf-8'))
+                self.msg(channel, flipit)
             except:
                 print "Unexpected error:", sys.exc_info()
 
