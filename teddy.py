@@ -8,6 +8,7 @@ from twisted.internet import reactor, protocol, ssl
 from chatterbotapi import ChatterBotFactory, ChatterBotType
 from pug import get as getpug
 from lgtm import get as getlgtm
+from reddit import get as getreddit
 import sys
 import re
 import mechanize
@@ -240,6 +241,13 @@ class TeddyBot(irc.IRCClient):
 
         if "lgtm" in msg.lower():
             self.msg(channel, getlgtm())
+
+        if "tits" in msg.lower():
+            self.msg(channel, getreddit('tits'))
+
+        if msg.lower().startswith("!r"):
+            m = re.search('!r\W(.*)', msg.lower())
+            self.msg(channel, getreddit(m.group(1)))
 
         if msg.lower().startswith("!%s" % "dance"):
             self.msg(channel, ":D\<")
