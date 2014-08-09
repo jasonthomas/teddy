@@ -30,13 +30,16 @@ class Score:
             self.query_mysql(sql)
 
     def increment(self, user):
+        self.create_user(user)
         sql = """UPDATE score SET count = count + 1 WHERE user = '%s'""" % user
         self.query_mysql(sql)
 
     def decrement(self, user):
+        self.create_user(user)
         sql = """UPDATE score SET count = count - 1 WHERE user = '%s'""" % user
         self.query_mysql(sql)
 
     def get_score(self, user):
+        self.create_user(user)
         sql = """SELECT count from score where user = '%s'""" % user
         return self.query_mysql(sql)

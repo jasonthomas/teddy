@@ -9,6 +9,7 @@ from chatterbotapi import ChatterBotFactory, ChatterBotType
 from pug import get as getpug
 from lgtm import get as getlgtm
 from reddit import get as getreddit
+from score import Score
 import sys
 import re
 import mechanize
@@ -38,6 +39,7 @@ redis_server = redis.Redis(settings.REDIS_HOST)
 factory = ChatterBotFactory()
 teddy_brain = factory.create(ChatterBotType.JABBERWACKY)
 teddy_session = teddy_brain.create_session()
+score = Score(dbhost, dbuser, dbpass, dbname)
 
 
 class TeddyBot(irc.IRCClient):
@@ -59,9 +61,9 @@ class TeddyBot(irc.IRCClient):
 
         for channel, key in network['autojoin']:
             print('join channel %s' % channel)
-	    if key:
+        if key:
                 self.join(channel, key)
-	    else:
+        else:
                 self.join(channel)
 
     def joined(self, channel):
@@ -157,17 +159,11 @@ class TeddyBot(irc.IRCClient):
             parse_last = re.split(' ', msg.strip())
             if len(parse_last) == 2:
                 if source == 'jason' and parse_last[1] == 'mute':
-                    teddy_mute = 'yes'
+                    teddy_mute = True
                     self.msg(channel, 'i will stop talking now ' + source)
                 elif source == 'jason' and parse_last[1] == 'unmute':
-                    teddy_mute = 'no'
+                    teddy_mute = False
                     self.msg(channel, 'lets talk ' + source)
-            elif len(parse_last) == 3 and source == 'jason' and parse_last[1] == 'op':
-                    connection.mode(channel, '+o ' + parse_last[2])
-            elif len(parse_last) == 3 and source == 'jason' and parse_last[1] == 'kill':
-                    connection.mode(channel, 'a ' + parse_last[2])
-            else:
-                self.msg(channel, 'hello ' + source)
 
         if msg.lower().startswith("!%s" % "all"):
             parse_last = re.split(' ', msg.strip())
@@ -256,6 +252,20 @@ class TeddyBot(irc.IRCClient):
             m = re.search('!r\W(.*)', msg.lower())
             self.msg(channel, getreddit(m.group(1)))
 
+        if msg.lower().endswith('++'):
+            m = re.search('(.*)\+\+', msg.lower())
+            score.increment(m.group(1))
+
+        if msg.lower().endswith('--'):
+            m = re.search('(.*)\-\-', msg.lower())
+            score.decrement(m.group(1))
+
+        if msg.lower().startswith('!score'):
+            user_score_name = re.split(' ', msg.strip())[1]
+            try:
+                user_score = score.get_score(user_score_name)
+                self.msg(channel, 'User %s has %s points' % (user_score_name, user_score))
+
         if msg.lower().startswith("!%s" % "dance"):
             self.msg(channel, ":D\<")
             self.msg(channel, ":D|<")
@@ -280,7 +290,7 @@ class TeddyBot(irc.IRCClient):
             except:
                 print "Unexpected error:", sys.exc_info()
 
-        if re.search("teddy", msg.lower()) and teddy_mute == 'no':
+        if re.search("teddy", msg.lower()) and not teddy_mute):
             try:
                 teddy_response = self.teddy_ai(msg.lower())
                 self.msg(channel, source + ": " + teddy_response)
