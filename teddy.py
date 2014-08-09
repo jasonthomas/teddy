@@ -61,9 +61,9 @@ class TeddyBot(irc.IRCClient):
 
         for channel, key in network['autojoin']:
             print('join channel %s' % channel)
-        if key:
+            if key:
                 self.join(channel, key)
-        else:
+            else:
                 self.join(channel)
 
     def joined(self, channel):
@@ -262,9 +262,9 @@ class TeddyBot(irc.IRCClient):
 
         if msg.lower().startswith('!score'):
             user_score_name = re.split(' ', msg.strip())[1]
-            try:
-                user_score = score.get_score(user_score_name)
-                self.msg(channel, 'User %s has %s points' % (user_score_name, user_score))
+            
+            user_score = score.get_score(user_score_name)
+            self.msg(channel, '%s has %s points!' % (user_score_name, user_score))
 
         if msg.lower().startswith("!%s" % "dance"):
             self.msg(channel, ":D\<")
@@ -290,7 +290,7 @@ class TeddyBot(irc.IRCClient):
             except:
                 print "Unexpected error:", sys.exc_info()
 
-        if re.search("teddy", msg.lower()) and not teddy_mute):
+        if re.search("teddy", msg.lower()) and not teddy_mute:
             try:
                 teddy_response = self.teddy_ai(msg.lower())
                 self.msg(channel, source + ": " + teddy_response)
