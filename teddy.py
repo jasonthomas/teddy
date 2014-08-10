@@ -202,7 +202,6 @@ class TeddyBot(irc.IRCClient):
 
         if msg.lower().startswith("!%s" % "flip"):
             parse_last = msg.strip()[6:]
-            parse_last = msg.strip().lstrip('!flip ')
             angry = '(╯°□°)╯︵'
 
             if parse_last:
