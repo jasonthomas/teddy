@@ -5,7 +5,7 @@
 
 from twisted.words.protocols import irc
 from twisted.internet import reactor, protocol, ssl
-from chatterbotapi import ChatterBotFactory, ChatterBotType
+from chatterbot.cleverbot.cleverbot import Cleverbot
 from pug import get as getpug
 from lgtm import get as getlgtm
 from reddit import get as getreddit
@@ -36,9 +36,7 @@ woot_key = settings.WOOT_KEY
 teddy_mute = 'no'
 redis_server = redis.Redis(settings.REDIS_HOST)
 
-factory = ChatterBotFactory()
-teddy_brain = factory.create(ChatterBotType.JABBERWACKY)
-teddy_session = teddy_brain.create_session()
+teddy_brain = Cleverbot()
 score = Score(dbhost, dbuser, dbpass, dbname)
 
 
@@ -134,7 +132,7 @@ class TeddyBot(irc.IRCClient):
     def teddy_ai(self, msg):
         global teddy_brian
         san_msg = msg.replace('teddy', '')
-        return teddy_session.think(san_msg)
+        return teddy_brain.ask(san_msg)
 
     def url_by_source(self, source):
         myurl = []
@@ -261,7 +259,7 @@ class TeddyBot(irc.IRCClient):
 
         if msg.lower().startswith('!score'):
             user_score_name = re.split(' ', msg.strip())[1]
-            
+
             user_score = score.get_score(user_score_name)
             self.msg(channel, '%s has %s points!' % (user_score_name, user_score))
 
