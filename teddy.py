@@ -287,7 +287,7 @@ class TeddyBot(irc.IRCClient):
             except:
                 print "Unexpected error:", sys.exc_info()
 
-        if re.search("teddy", msg.lower()) and not teddy_mute:
+        if "teddy" in msg.lower():
             try:
                 teddy_response = self.teddy_ai(msg.lower())
                 self.msg(channel, source + ": " + teddy_response)
